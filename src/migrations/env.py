@@ -13,6 +13,7 @@ if BASE_DIR not in sys.path:
 
 from src.database import Base
 from src.models.hotels import *
+from src.models.rooms import *
 from src.config import settings
 
 # this is the Alembic Config object, which provides
