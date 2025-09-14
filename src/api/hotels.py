@@ -28,6 +28,17 @@ async def get_hotels(
     return hotels
 
 
+@router.get("/{hotel_id}")
+async def get_hotel(hotel_id: int) -> None:
+    async with async_session_maker() as session:
+        hotel = await HotelRepository(session).get_one_or_none(
+            id=hotel_id
+        )
+    if hotel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return {"status": "ok", "data": hotel} 
+
+
 @router.delete("/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_hotel(hotel_id: int) -> None:
     async with async_session_maker() as session:
@@ -35,7 +46,6 @@ async def delete_hotel(hotel_id: int) -> None:
             id=hotel_id
         )
         await session.commit()
-        hotel = hotel.scalar_one_or_none()
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok"}   
@@ -57,7 +67,7 @@ async def create_hotel(
             hotel
         )
         await session.commit()
-    return {"status": "ok", "data": hotel.scalar_one_or_none()}
+    return {"status": "ok", "data": hotel}
 
 
 @router.put("/{hotel_id}")
@@ -71,7 +81,6 @@ async def update_hotel(
             id=hotel_id
         )
         await session.commit()
-        hotel = hotel.scalar_one_or_none()
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok", "data": hotel}
@@ -88,7 +97,6 @@ async def partial_update_hotel(
             id=hotel_id
         )
         await session.commit()
-        hotel = hotel.scalar_one_or_none()
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok", "data": hotel}
