@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Body, Depends, status
-from sqlalchemy import insert, select
+from fastapi import APIRouter, Query, Body, Depends, status, HTTPException
+from sqlalchemy import insert, select, delete
 
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker
@@ -28,10 +28,16 @@ async def get_hotels(
     return hotels
 
 
-@router.delete("/{hotel_id}")
-def delete_hotel(hotel_id: int) -> None:
-    global hotels
-    hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
+@router.delete("/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_hotel(hotel_id: int) -> None:
+    async with async_session_maker() as session:
+        hotel = await HotelRepository(session).delete(
+            id=hotel_id
+        )
+        await session.commit()
+        hotel = hotel.scalar_one_or_none()
+    if hotel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok"}   
 
 
@@ -47,36 +53,42 @@ async def create_hotel(
     )
 ):
     async with async_session_maker() as session:
-        hotel = await HotelRepository(session).add_one(
-            hotel.model_dump()
+        hotel = await HotelRepository(session).add(
+            hotel
         )
         await session.commit()
     return {"status": "ok", "data": hotel.scalar_one_or_none()}
 
 
 @router.put("/{hotel_id}")
-def update_hotel(
+async def update_hotel(
     hotel_id: int,
     hotel: Hotel
-) -> Hotel | dict:
-    global hotels
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            hotel["title"] = hotel.title
-            hotel["name"] = hotel.name
-            return hotel
-    return {"error": f"Отеля с id={hotel_id} не существует"}
+):
+    async with async_session_maker() as session:
+        hotel = await HotelRepository(session).edit(
+            hotel,
+            id=hotel_id
+        )
+        await session.commit()
+        hotel = hotel.scalar_one_or_none()
+    if hotel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return {"status": "ok", "data": hotel}
 
 
 @router.patch("/{hotel_id}")
-def partial_update_hotel(
+async def partial_update_hotel(
     hotel_id: int,
     hotel: HotelPATCH
-) -> Hotel | dict:
-    global hotels
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            hotel["title"] = hotel.title if hotel.title is not None else hotel["title"]
-            hotel["name"] = hotel.name if hotel.name is not None else hotel["name"]
-            return hotel
-    return {"error": f"Отеля с id={hotel_id} не существует"}
+):
+    async with async_session_maker() as session:
+        hotel = await HotelRepository(session).edit(
+            hotel,
+            id=hotel_id
+        )
+        await session.commit()
+        hotel = hotel.scalar_one_or_none()
+    if hotel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return {"status": "ok", "data": hotel}
