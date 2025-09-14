@@ -6,6 +6,7 @@ from sqlalchemy import insert, select
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker
 from src.models.hotels import HotelsORM
+from src.repositories.hotels import HotelRepository
 from src.schemas.hotels import Hotel, HotelPATCH
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
@@ -18,19 +19,12 @@ async def get_hotels(
     title: str | None = Query(default=None, description="Название отеля"),
 ) -> list[Hotel]:
     async with async_session_maker() as session:
-        query = select(HotelsORM)
-        if title:
-            query = query.where(HotelsORM.title.icontains(title))
-        if location:
-            query = query.where(HotelsORM.location.icontains(location))
-        query = (
-            query
-            .offset((pagination.page - 1) * pagination.per_page)
-            .limit(pagination.per_page)
+        hotels = await HotelRepository(session).get_all(
+            location, 
+            title, 
+            limit=pagination.per_page, 
+            offset=(pagination.page - 1) * pagination.per_page
         )
-        print(query.compile())
-        result = await session.execute(query)
-        hotels = result.scalars().all()
     return hotels
 
 
@@ -51,12 +45,13 @@ async def create_hotel(
             }
         }
     )
-) -> dict:
+):
     async with async_session_maker() as session:
-        add_hotel_stmt = insert(HotelsORM).values(**hotel.model_dump())
-        await session.execute(add_hotel_stmt)
+        hotel = await HotelRepository(session).add_one(
+            hotel.model_dump()
+        )
         await session.commit()
-    return {"status": "ok"}
+    return {"status": "ok", "data": hotel.scalar_one_or_none()}
 
 
 @router.put("/{hotel_id}")
