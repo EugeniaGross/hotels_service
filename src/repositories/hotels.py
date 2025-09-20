@@ -2,10 +2,12 @@ from sqlalchemy import insert, select
 
 from src.repositories.base import BaseRepository
 from src.models.hotels import HotelsORM
+from src.schemas.hotels import Hotel
 
 
 class HotelRepository(BaseRepository):
     model = HotelsORM
+    scheme = Hotel
     
     async def get_all(self, location, title, limit, offset):
         query = select(self.model)
@@ -19,5 +21,5 @@ class HotelRepository(BaseRepository):
             .limit(limit)
         )
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return [self.scheme.model_validate(model) for model in result.scalars().all()]
     
