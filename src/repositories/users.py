@@ -9,7 +9,7 @@ class UsersRepository(BaseRepository):
     model = UsersORM
     scheme = User
     
-    async def get_one_or_none(self, **filter_by) -> UserWithHashedPassword | None:
+    async def get_one_with_hashed_pass(self, **filter_by) -> UserWithHashedPassword | None:
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
         model = result.scalars().one_or_none()

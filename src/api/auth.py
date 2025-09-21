@@ -5,6 +5,7 @@ from src.schemas.users import UserRequestAdd, UserAdd, User
 from src.database import async_session_maker
 from src.repositories.users import UsersRepository
 from src.services.auth import AuthService
+from src.api.dependencies import UserIDDep
 
 
 router = APIRouter(prefix="/auth", tags=["Регистрация и аутентификация"])
@@ -49,7 +50,7 @@ async def login_user(
     ),
 ):
     async with async_session_maker() as session:
-        user = await UsersRepository(session).get_one_or_none(
+        user = await UsersRepository(session).get_one_with_hashed_pass(
             email=data.email
         )
     if not user:
@@ -67,9 +68,21 @@ async def login_user(
     return {"access_token": access_token}
     
 
-@router.get("/only_auth")
-async def only_auth(
-    request: Request
+@router.get("/me")
+async def get_me(
+    user_id: UserIDDep
+) -> User:
+    async with async_session_maker() as session:
+        user = await UsersRepository(session).get_one_or_none(
+            id=user_id
+        )
+    return user
+
+
+@router.post("/logout")
+async def logout(
+    user_id: UserIDDep,
+    response: Response
 ):
-    access_token = request.cookies.get("access_token")
-    return
+    response.delete_cookie("access_token")
+    return {"status": "ok"}
