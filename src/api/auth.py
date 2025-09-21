@@ -1,18 +1,13 @@
-from fastapi import APIRouter, Query, Body, Depends, status, HTTPException
-from passlib.context import CryptContext
+from fastapi import APIRouter, Query, Body, Depends, status, HTTPException, Response, Request
 from sqlalchemy.exc import IntegrityError
 
 from src.schemas.users import UserRequestAdd, UserAdd, User
 from src.database import async_session_maker
 from src.repositories.users import UsersRepository
+from src.services.auth import AuthService
+
 
 router = APIRouter(prefix="/auth", tags=["Регистрация и аутентификация"])
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
 
 @router.post("/register")
 async def register_user(
@@ -25,11 +20,11 @@ async def register_user(
         }
     )
 ):
-    hashed_password = get_hash_password(data.password)
+    hashed_password = AuthService().get_hash_password(data.password)
     data = UserAdd(email=data.email, hashed_password=hashed_password)
     try:
         async with async_session_maker() as session:
-            user = await UsersRepository(session).add(
+            await UsersRepository(session).add(
                 data
             )
             await session.commit()
@@ -39,3 +34,42 @@ async def register_user(
             detail={"error": "Пользователь уже существует"}
         )
     return {"status": "ok"}
+
+
+@router.post("/login")
+async def login_user(
+    response: Response,
+    data: UserRequestAdd = Body(
+        openapi_examples={
+            "1": {
+                "summary": "Валидный запрос", 
+                "value": {"email": "test@example.com", "password": "12345678"}
+            }
+        }
+    ),
+):
+    async with async_session_maker() as session:
+        user = await UsersRepository(session).get_one_or_none(
+            email=data.email
+        )
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail={"error": "Пользователь с таким email не зарегестрирован"}
+        )
+    if not AuthService().verify_password(data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail={"error": "Не верный пароль"}
+        )
+    access_token = AuthService().create_access_token({"id": user.id})
+    response.set_cookie("access_token", access_token)
+    return {"access_token": access_token}
+    
+
+@router.get("/only_auth")
+async def only_auth(
+    request: Request
+):
+    access_token = request.cookies.get("access_token")
+    return
