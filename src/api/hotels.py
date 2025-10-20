@@ -1,9 +1,6 @@
-from fastapi import APIRouter, Query, Body, Depends, status, HTTPException
+from fastapi import APIRouter, Query, Body, status, HTTPException
 
-from src.api.dependencies import PaginationDep
-from src.database import async_session_maker
-from src.models.hotels import HotelsORM
-from src.repositories.hotels import HotelRepository
+from src.api.dependencies import PaginationDep, DBDep
 from src.schemas.hotels import Hotel, HotelPATCH
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
@@ -12,37 +9,35 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 @router.get("")
 async def get_hotels(
     pagination: PaginationDep,
+    db: DBDep,
     location: str | None = Query(default=None, description="Адрес отеля"),
     title: str | None = Query(default=None, description="Название отеля"),
 ) -> list[Hotel]:
-    async with async_session_maker() as session:
-        hotels = await HotelRepository(session).get_all(
-            location, 
-            title, 
-            limit=pagination.per_page, 
-            offset=(pagination.page - 1) * pagination.per_page
-        )
+    hotels = await db.hotels.get_all(
+        location, 
+        title, 
+        limit=pagination.per_page, 
+        offset=(pagination.page - 1) * pagination.per_page
+    )
     return hotels
 
 
 @router.get("/{hotel_id}")
-async def get_hotel(hotel_id: int) -> Hotel | None:
-    async with async_session_maker() as session:
-        hotel = await HotelRepository(session).get_one_or_none(
-            id=hotel_id
-        )
+async def get_hotel(hotel_id: int, db: DBDep,) -> Hotel | None:
+    hotel = await db.hotels.get_one_or_none(
+        id=hotel_id
+    )
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok", "data": hotel} 
 
 
 @router.delete("/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_hotel(hotel_id: int) -> None:
-    async with async_session_maker() as session:
-        hotel = await HotelRepository(session).delete(
-            id=hotel_id
-        )
-        await session.commit()
+async def delete_hotel(hotel_id: int, db: DBDep,) -> None:
+    hotel = await db.hotels.delete(
+        id=hotel_id
+    )
+    await db.commit()
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return 
@@ -50,6 +45,7 @@ async def delete_hotel(hotel_id: int) -> None:
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_hotel(
+    db: DBDep,
     data: Hotel = Body(
         openapi_examples={
             "1": {
@@ -57,27 +53,26 @@ async def create_hotel(
                 "value": {"title": "Mocsow Plaza", "location": "Mocsow"}
             }
         }
-    )
+    ),
 ) -> Hotel:
-    async with async_session_maker() as session:
-        hotel = await HotelRepository(session).add(
-            data
-        )
-        await session.commit()
+    hotel = await db.hotels.add(
+        data
+    )
+    await db.commit()
     return {"status": "ok", "data": hotel}
 
 
 @router.put("/{hotel_id}")
 async def update_hotel(
+    db: DBDep,
     hotel_id: int,
     hotel: Hotel
 ) -> Hotel:
-    async with async_session_maker() as session:
-        hotel = await HotelRepository(session).edit(
-            hotel,
-            id=hotel_id
-        )
-        await session.commit()
+    hotel = await db.hotels.edit(
+        hotel,
+        id=hotel_id
+    )
+    await db.commit()
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok", "data": hotel}
@@ -85,15 +80,15 @@ async def update_hotel(
 
 @router.patch("/{hotel_id}")
 async def partial_update_hotel(
+    db: DBDep,
     hotel_id: int,
     hotel: HotelPATCH
 ) -> Hotel:
-    async with async_session_maker() as session:
-        hotel = await HotelRepository(session).edit(
-            hotel,
-            id=hotel_id
-        )
-        await session.commit()
+    hotel = await db.hotels.edit(
+        hotel,
+        id=hotel_id
+    )
+    await db.commit()
     if hotel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return {"status": "ok", "data": hotel}

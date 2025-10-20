@@ -1,17 +1,16 @@
-from fastapi import APIRouter, Query, Body, Depends, status, HTTPException, Response, Request
+from fastapi import APIRouter, Body, status, HTTPException, Response, Request
 from sqlalchemy.exc import IntegrityError
 
 from src.schemas.users import UserRequestAdd, UserAdd, User
-from src.database import async_session_maker
-from src.repositories.users import UsersRepository
 from src.services.auth import AuthService
-from src.api.dependencies import UserIDDep
+from src.api.dependencies import UserIDDep, DBDep
 
 
 router = APIRouter(prefix="/auth", tags=["Регистрация и аутентификация"])
 
 @router.post("/register")
 async def register_user(
+    db: DBDep,
     data: UserRequestAdd = Body(
         openapi_examples={
             "1": {
@@ -24,11 +23,10 @@ async def register_user(
     hashed_password = AuthService().get_hash_password(data.password)
     data = UserAdd(email=data.email, hashed_password=hashed_password)
     try:
-        async with async_session_maker() as session:
-            await UsersRepository(session).add(
-                data
-            )
-            await session.commit()
+        await db.users.add(
+            data
+        )
+        await db.commit()
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
@@ -39,6 +37,7 @@ async def register_user(
 
 @router.post("/login")
 async def login_user(
+    db: DBDep,
     response: Response,
     data: UserRequestAdd = Body(
         openapi_examples={
@@ -49,10 +48,9 @@ async def login_user(
         }
     ),
 ):
-    async with async_session_maker() as session:
-        user = await UsersRepository(session).get_one_with_hashed_pass(
-            email=data.email
-        )
+    user = await db.users.get_one_with_hashed_pass(
+        email=data.email
+    )
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -70,12 +68,12 @@ async def login_user(
 
 @router.get("/me")
 async def get_me(
+    db: DBDep,
     user_id: UserIDDep
 ) -> User:
-    async with async_session_maker() as session:
-        user = await UsersRepository(session).get_one_or_none(
-            id=user_id
-        )
+    user = await db.users.get_one_or_none(
+        id=user_id
+    )
     return user
 
 

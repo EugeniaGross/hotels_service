@@ -11,6 +11,6 @@ class RoomsORM(Base):
     hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"))
     title: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None]
-    price: Mapped[str]
+    price: Mapped[int]
     quantity: Mapped[int]
     

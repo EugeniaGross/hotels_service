@@ -3,8 +3,8 @@ from pydantic import BaseModel, ConfigDict
 
 class RoomAdd(BaseModel):
     title: str
-    description: str
-    price: str
+    description: str | None = None
+    price: int
     quantity: int
     
     
@@ -17,5 +17,5 @@ class Room(RoomAdd):
 class RoomPATCH(BaseModel):
     title: str | None = None
     description: str | None = None
-    price: str | None = None
+    price: int | None = None
     quantity: str | None = None
