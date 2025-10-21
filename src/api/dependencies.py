@@ -1,4 +1,5 @@
-from typing import Annotated
+from datetime import date
+from typing import Annotated, Optional
 
 from fastapi import Query, Depends, Request, HTTPException, status
 from pydantic import BaseModel
@@ -11,6 +12,12 @@ from src.utils.db_manager import DBManager
 class PaginationParams(BaseModel):
     page: Annotated[int, Query(default=1, description="Номер страницы", gt=0)]
     per_page: Annotated[int, Query(default=3, description="Количество записей", gt=0, lt=100)]
+    
+    
+class BookingFilters(BaseModel):
+    room_id: Optional[Annotated[int, Query(default=None, description="ID комнаты")]] = None
+    date_from: Optional[Annotated[int, Query(default=None, description="Дата заселения")]] = None
+    date_to: Optional[Annotated[int, Query(default=None, description="Дата выезда")]] = None
     
     
 def get_token(request: Request) -> str:
@@ -39,4 +46,5 @@ async def get_db():
 
 DBDep = Annotated[DBManager, Depends(get_db)]    
 PaginationDep = Annotated[PaginationParams, Depends()]
+BookingFiltersDep = Annotated[BookingFilters, Depends()]
 UserIDDep = Annotated[int, Depends(get_current_user_id)]

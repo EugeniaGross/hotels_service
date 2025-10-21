@@ -3,18 +3,19 @@ from datetime import date
 from pydantic import BaseModel, ConfigDict
 
 
-class BookingsCreateRequest(BaseModel):
+class BookingsAddRequest(BaseModel):
     date_from: date
     date_to: date
     room_id: int
 
 
-class BookingsCreate(BookingsCreateRequest):
+class BookingsAdd(BookingsAddRequest):
     user_id: int
     price: int
     
     
-class Bookings(BookingsCreateRequest):
+class Bookings(BookingsAddRequest):
+    id: int
     total_cost: int
     user_id: int
     
