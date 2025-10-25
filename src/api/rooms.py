@@ -2,8 +2,9 @@ from datetime import date
 
 from fastapi import APIRouter, status, HTTPException
 
-from src.api.dependencies import PaginationDep, DBDep
-from src.schemas.rooms import Room, RoomAdd, RoomPATCH
+from src.api.dependencies import DBDep
+from src.schemas.rooms import Room, RoomAdd, RoomPatch, RoomPatchRequest, RoomAddRequest
+from src.schemas.facilities import RoomFacilityAdd
 
 
 router = APIRouter(
@@ -53,14 +54,19 @@ async def delete_room(db: DBDep, hotel_id: int, room_id: int) -> None:
 async def create_room(
     db: DBDep,
     hotel_id: int,
-    data: RoomAdd
+    data: RoomAddRequest
 ):
-    hotel = await db.rooms.add(
-        data,
-        hotel_id=hotel_id
+    _data = RoomAdd(hotel_id=hotel_id, **data.model_dump())
+    room = await db.rooms.add(
+        _data
     )
+    rooms_facilities = [
+        RoomFacilityAdd(room_id=room.id, facility_id=facility_id)
+        for facility_id in data.facilities_ids
+    ]
+    await db.rooms_facilities.add_bulk(rooms_facilities)
     await db.commit()
-    return {"status": "ok", "data": hotel}
+    return {"status": "ok", "data": room}
 
 
 @router.put("/{room_id}")
@@ -68,18 +74,23 @@ async def update_room(
     db: DBDep,
     hotel_id: int,
     room_id: int,
-    hotel: Room
+    data: RoomAddRequest
 ):
-    hotel = await db.rooms.edit(
-        hotel,
+    _data = RoomAdd(hotel_id=hotel_id, **data.model_dump())
+    room = await db.rooms.edit(
+        _data,
         exclude_unset=False,
         id=room_id,
-        hotel_id=hotel_id
     )
+    rooms_facilities = [
+        RoomFacilityAdd(room_id=room.id, facility_id=facility_id)
+        for facility_id in data.facilities_ids
+    ]
+    await db.rooms_facilities.add_bulk(rooms_facilities)
     await db.commit()
-    if hotel is None:
+    if room is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    return {"status": "ok", "data": hotel}
+    return {"status": "ok", "data": room}
 
 
 @router.patch("/{room_id}")
@@ -87,15 +98,20 @@ async def partial_update_room(
     db: DBDep,
     hotel_id: int,
     room_id: int,
-    hotel: RoomPATCH
+    data: RoomPatchRequest
 ):
-    hotel = await db.rooms.edit(
-        hotel,
+    _data = RoomPatch(hotel_id=hotel_id, **data.model_dump())
+    room = await db.rooms.edit(
+        _data,
         exclude_unset=True,
-        id=room_id,
-        hotel_id=hotel_id
+        id=room_id
     )
+    rooms_facilities = [
+        RoomFacilityAdd(room_id=room.id, facility_id=facility_id)
+        for facility_id in data.facilities_ids
+    ]
+    await db.rooms_facilities.add_bulk(rooms_facilities)
     await db.commit()
-    if hotel is None:
+    if room is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    return {"status": "ok", "data": hotel}
+    return {"status": "ok", "data": room}
