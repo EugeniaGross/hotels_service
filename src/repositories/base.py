@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 from sqlalchemy import insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,10 +12,17 @@ class BaseRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
         
-    async def get_all(self):
-        query = select(self.model)
+    async def get_filtered(self, *filter, **filter_by) -> list[BaseModel | Any]:
+        query = (
+            select(self.model)
+            .filter(*filter)
+            .filter_by(**filter_by)
+        )
         result = await self.session.execute(query)
         return [self.scheme.model_validate(model) for model in result.scalars().all()]
+        
+    async def get_all(self, *args, **kwargs) -> list[BaseModel | Any]:
+        return await self.get_filtered()
     
     async def get_one_or_none(self, **filter_by):
         query = select(self.model).filter_by(**filter_by)

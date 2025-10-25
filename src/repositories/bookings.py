@@ -11,7 +11,6 @@ class BookingsRepository(BaseRepository):
     scheme = Bookings
     
     async def get_all(self, limit, offset, **filter_by):
-        print(filter_by)
         query = select(self.model).filter_by(**filter_by)
         query = (
             query

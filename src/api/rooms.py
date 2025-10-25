@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, status, HTTPException
 
 from src.api.dependencies import PaginationDep, DBDep
@@ -12,13 +14,14 @@ router = APIRouter(
 @router.get("")
 async def get_rooms(
     db: DBDep,
-    pagination: PaginationDep,
-    hotel_id: int
+    hotel_id: int,
+    date_from: date,
+    date_to: date
 ) -> list[Room]:
-    rooms = await db.rooms.get_all(
-        limit=pagination.per_page, 
-        offset=(pagination.page - 1) * pagination.per_page,
-        hotel_id=hotel_id
+    rooms = await db.rooms.get_filterd_by_time(
+        hotel_id=hotel_id,
+        date_from=date_from,
+        date_to=date_to
     )
     return rooms
 

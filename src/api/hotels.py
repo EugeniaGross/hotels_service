@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Query, Body, status, HTTPException
 
 from src.api.dependencies import PaginationDep, DBDep
@@ -10,12 +12,16 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 async def get_hotels(
     pagination: PaginationDep,
     db: DBDep,
+    date_from: date,
+    date_to: date,
     location: str | None = Query(default=None, description="Адрес отеля"),
     title: str | None = Query(default=None, description="Название отеля"),
 ) -> list[Hotel]:
     hotels = await db.hotels.get_all(
-        location, 
-        title, 
+        date_from=date_from,
+        date_to=date_to,
+        location=location, 
+        title=title, 
         limit=pagination.per_page, 
         offset=(pagination.page - 1) * pagination.per_page
     )
