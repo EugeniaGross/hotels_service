@@ -17,7 +17,7 @@ async def get_hotels(
     location: str | None = Query(default=None, description="Адрес отеля"),
     title: str | None = Query(default=None, description="Название отеля"),
 ) -> list[Hotel]:
-    hotels = await db.hotels.get_all(
+    hotels = await db.hotels.get_filtered_by_time(
         date_from=date_from,
         date_to=date_to,
         location=location, 

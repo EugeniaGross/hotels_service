@@ -16,6 +16,7 @@ from src.models.hotels import *
 from src.models.rooms import *
 from src.models.users import *
 from src.models.bookings import *
+from src.models.facilities import *
 from src.config import settings
 
 # this is the Alembic Config object, which provides
