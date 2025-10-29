@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
 from src.api.dependencies import DBDep
-from src.schemas.facilities import Facilities, FacilitiesAdd
+from src.schemas.facilities import Facility, FacilityAdd
 
 router = APIRouter(prefix="/facilities", tags=["Удобства"])
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/facilities", tags=["Удобства"])
 @router.get("")
 async def get_facilities(
     db: DBDep,
-) -> list[Facilities]:
+) -> list[Facility]:
     
     facilities = await db.facilities.get_all()
     return facilities
@@ -18,7 +18,7 @@ async def get_facilities(
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_facility(
     db: DBDep,
-    data: FacilitiesAdd
+    data: FacilityAdd
 ):
     facility = await db.facilities.add(data)
     await db.commit()

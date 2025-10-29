@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, status, HTTPException
 
 from src.api.dependencies import DBDep
-from src.schemas.rooms import Room, RoomAdd, RoomPatch, RoomPatchRequest, RoomAddRequest
+from src.schemas.rooms import Room, RoomAdd, RoomPatch, RoomPatchRequest, RoomAddRequest, RoomWithRels
 from src.schemas.facilities import RoomFacilityAdd
 
 
@@ -18,7 +18,7 @@ async def get_rooms(
     hotel_id: int,
     date_from: date,
     date_to: date
-) -> list[Room]:
+) -> list[RoomWithRels]:
     rooms = await db.rooms.get_filterd_by_time(
         hotel_id=hotel_id,
         date_from=date_from,
@@ -82,11 +82,7 @@ async def update_room(
         exclude_unset=False,
         id=room_id,
     )
-    rooms_facilities = [
-        RoomFacilityAdd(room_id=room.id, facility_id=facility_id)
-        for facility_id in data.facilities_ids
-    ]
-    await db.rooms_facilities.add_bulk(rooms_facilities)
+    await db.rooms_facilities.set_room_fasilities(room_id, data.facilities_ids)
     await db.commit()
     if room is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -100,17 +96,15 @@ async def partial_update_room(
     room_id: int,
     data: RoomPatchRequest
 ):
-    _data = RoomPatch(hotel_id=hotel_id, **data.model_dump())
+    _data_dict = data.model_dump(exclude_unset=True)
+    _data = RoomPatch(hotel_id=hotel_id, **_data_dict)
     room = await db.rooms.edit(
         _data,
         exclude_unset=True,
         id=room_id
     )
-    rooms_facilities = [
-        RoomFacilityAdd(room_id=room.id, facility_id=facility_id)
-        for facility_id in data.facilities_ids
-    ]
-    await db.rooms_facilities.add_bulk(rooms_facilities)
+    if "facilities_ids" in _data_dict:
+        await db.rooms_facilities.set_room_fasilities(room_id, data.facilities_ids)
     await db.commit()
     if room is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
