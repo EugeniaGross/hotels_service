@@ -4,10 +4,12 @@ from pydantic import BaseModel
 from sqlalchemy import insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.repositories.mappers.base import DataMapper
+
 
 class BaseRepository:
     model = None
-    scheme = None
+    mapper: DataMapper = None
     
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -19,7 +21,7 @@ class BaseRepository:
             .filter_by(**filter_by)
         )
         result = await self.session.execute(query)
-        return [self.scheme.model_validate(model) for model in result.scalars().all()]
+        return [self.mapper.map_to_domain_entity(model) for model in result.scalars().all()]
         
     async def get_all(self, *args, **kwargs) -> list[BaseModel | Any]:
         return await self.get_filtered()
@@ -30,12 +32,12 @@ class BaseRepository:
         model = result.scalars().one_or_none()
         if model is None:
             return None
-        return self.scheme.model_validate(model)
+        return self.mapper.map_to_domain_entity(model)
     
     async def add(self, data: BaseModel):
         stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         result = await self.session.execute(stmt)
-        return self.scheme.model_validate(result.scalar_one())
+        return self.mapper.map_to_domain_entity(result.scalar_one())
     
     async def add_bulk(self, data: list[BaseModel]):
         stmt = (
@@ -55,7 +57,7 @@ class BaseRepository:
         model = result.scalars().one_or_none()
         if model is None:
             return None
-        return self.scheme.model_validate(model)
+        return self.mapper.map_to_domain_entity(model)
     
     async def delete(self, **filter_by):
         stmt = delete(self.model).filter_by(**filter_by).returning(self.model)
@@ -63,5 +65,5 @@ class BaseRepository:
         model = result.scalars().one_or_none()
         if model is None:
             return None
-        return self.scheme.model_validate(model)
+        return self.mapper.map_to_domain_entity(model)
             

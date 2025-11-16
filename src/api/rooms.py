@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, status, HTTPException
 
 from src.api.dependencies import DBDep
-from src.schemas.rooms import Room, RoomAdd, RoomPatch, RoomPatchRequest, RoomAddRequest, RoomWithRels
+from src.schemas.rooms import RoomAdd, RoomPatch, RoomPatchRequest, RoomAddRequest, RoomWithRels
 from src.schemas.facilities import RoomFacilityAdd
 
 
@@ -29,7 +29,7 @@ async def get_rooms(
 
 @router.get("/{room_id}")
 async def get_room(db: DBDep, hotel_id: int, room_id: int):
-    rooms = await db.rooms.get_one_or_none(
+    rooms = await db.rooms.get_one_or_none_with_rel(
         id=room_id,
         hotel_id=hotel_id
     )
