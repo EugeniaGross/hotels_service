@@ -19,7 +19,7 @@ async def create_booking(
         id=data.room_id
     )
     data = BookingsAdd(**data.model_dump(), user_id=user_id, price=room.price)
-    booking = await db.bookings.add(data)
+    booking = await db.bookings.add_booking(data)
     await db.commit()
     return {"status": "ok", "data": booking}
 

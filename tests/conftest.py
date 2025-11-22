@@ -49,6 +49,12 @@ async def db():
         
         
 app.dependency_overrides[get_db] = get_db_null_pool
+
+
+@pytest.fixture(scope="session")
+async def ac():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
         
         
 @pytest.fixture(scope="session", autouse=True)
@@ -60,6 +66,10 @@ async def register_user(setup_database, ac):
             "password": "1234"
         }
     )
+    
+    
+@pytest.fixture(scope="session")
+async def authenticated_ac(register_user, ac):
     await ac.post(
         "/auth/login",
         json={
@@ -67,12 +77,6 @@ async def register_user(setup_database, ac):
             "password": "1234"
         }
     )
-    assert ac.cookies.get("access_token")
-    return ac
-        
-        
-@pytest.fixture(scope="session")
-async def ac():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
+    assert ac.cookies["access_token"]
+    yield ac
         
