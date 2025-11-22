@@ -1,4 +1,7 @@
 import json
+from unittest import mock
+
+mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f).start()
 
 from httpx import AsyncClient
 import pytest
@@ -57,6 +60,15 @@ async def register_user(setup_database, ac):
             "password": "1234"
         }
     )
+    await ac.post(
+        "/auth/login",
+        json={
+            "email": "kot@pes.com",
+            "password": "1234"
+        }
+    )
+    assert ac.cookies.get("access_token")
+    return ac
         
         
 @pytest.fixture(scope="session")
