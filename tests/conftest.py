@@ -11,6 +11,7 @@ from src.schemas.hotels import HotelAdd
 from src.schemas.rooms import RoomAdd
 from src.utils.db_manager import DBManager
 from src.database import async_session_maker_null_pool
+from src.api.dependencies import get_db
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -30,7 +31,21 @@ async def setup_database(check_test_mode):
         with open("tests/mock_rooms.json", encoding="utf-8") as rooms_json:
             rooms_data = [RoomAdd(**data) for data in json.load(rooms_json)]
             await db_.rooms.add_bulk(rooms_data) 
-        await db_.commit()  
+        await db_.commit() 
+        
+        
+async def get_db_null_pool():
+    async with DBManager(session_factory=async_session_maker_null_pool) as db:
+        yield db 
+        
+        
+@pytest.fixture(scope="function")
+async def db():
+    async for db in get_db_null_pool():
+        yield db
+        
+        
+app.dependency_overrides[get_db] = get_db_null_pool
         
         
 @pytest.fixture(scope="session", autouse=True)
@@ -48,10 +63,4 @@ async def register_user(setup_database, ac):
 async def ac():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-
-
-@pytest.fixture
-async def db():
-    async with DBManager(session_factory=async_session_maker_null_pool) as db:
-        yield db
         
