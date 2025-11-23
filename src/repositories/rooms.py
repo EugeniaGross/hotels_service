@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import RoomDataMapper, RoomDataWithRelsMapper
-from src.repositories.utils import get_rooms_ids_for_booking
+from src.repositories.utils import rooms_ids_for_booking
 from src.models.rooms import RoomsORM
 from src.schemas.rooms import Room
 
@@ -20,7 +20,7 @@ class RoomsRepository(BaseRepository):
         date_from: date, 
         date_to: date, 
     ) -> list[Room]:
-        rooms_ids_for_booking = get_rooms_ids_for_booking(
+        rooms_ids_for_booking_ = rooms_ids_for_booking(
             date_from,
             date_to,
             hotel_id,
@@ -28,7 +28,7 @@ class RoomsRepository(BaseRepository):
         query = (
             select(self.model)
             .options(joinedload(self.model.facilities))
-            .filter(RoomsORM.id.in_(rooms_ids_for_booking))
+            .filter(RoomsORM.id.in_(rooms_ids_for_booking_))
         )
         result = await self.session.execute(query)
         # print(rooms_ids_for_booking.compile(bind=engine, compile_kwargs={"literal_binds": True}))

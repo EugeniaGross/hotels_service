@@ -1,11 +1,11 @@
-from fastapi import APIRouter, status, Query
+from fastapi import APIRouter, status, HTTPException
 
 from src.api.dependencies import DBDep, UserIDDep, PaginationDep, BookingFiltersDep
 from src.schemas.bookings import BookingsAddRequest, BookingsAdd, Bookings
 
 
 router = APIRouter(
-    prefix="/bookigs", 
+    prefix="/bookings", 
     tags=["Бронирования"]
 )
 
@@ -19,7 +19,10 @@ async def create_booking(
         id=data.room_id
     )
     data = BookingsAdd(**data.model_dump(), user_id=user_id, price=room.price)
-    booking = await db.bookings.add_booking(data)
+    try:
+        booking = await db.bookings.add_booking(data, hotel_id=room.hotel_id)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
     await db.commit()
     return {"status": "ok", "data": booking}
 

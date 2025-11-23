@@ -48,6 +48,12 @@ async def db():
         yield db
         
         
+@pytest.fixture(scope="function")
+async def del_bookings(db):
+    await db.bookings.delete_bulk()
+    await db.commit()
+        
+        
 app.dependency_overrides[get_db] = get_db_null_pool
 
 

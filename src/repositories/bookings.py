@@ -1,13 +1,13 @@
 from datetime import date
 
 from pydantic import BaseModel
-from sqlalchemy import insert, select
+from sqlalchemy import select
 
 from src.repositories.base import BaseRepository
 from src.models.bookings import BookingsORM
 from src.schemas.bookings import Bookings
 from src.repositories.mappers.mappers import BookingDataMapper
-from src.repositories.utils import get_rooms_ids_for_booking
+from src.repositories.utils import rooms_ids_for_booking
 
 
 class BookingsRepository(BaseRepository):
@@ -32,12 +32,14 @@ class BookingsRepository(BaseRepository):
         result = await self.session.execute(query)
         return [self.mapper.map_to_domain_entity(model) for model in result.scalars().all()]
     
-    async def add_booking(self, data: BaseModel):
-        rooms_ids_for_booking = get_rooms_ids_for_booking(
+    async def add_booking(self, data: BaseModel, hotel_id: int):
+        rooms_ids_for_booking_ = rooms_ids_for_booking(
             data.date_from,
             data.date_to,
+            hotel_id=hotel_id
         )
-        if data.room_id not in rooms_ids_for_booking:
+        rooms_ids_to_book_res = await self.session.execute(rooms_ids_for_booking_)
+        rooms_ids_to_book: list[int] = rooms_ids_to_book_res.scalars().all()
+        if data.room_id not in rooms_ids_to_book:
             raise Exception("Этот номер не доступен для бронирования")
         return await super().add(data)
-    

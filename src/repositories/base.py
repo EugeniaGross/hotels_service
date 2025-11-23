@@ -66,4 +66,7 @@ class BaseRepository:
         if model is None:
             return None
         return self.mapper.map_to_domain_entity(model)
-            
+    
+    async def delete_bulk(self, **filter_by):
+        stmt = delete(self.model).filter_by(**filter_by)
+        await self.session.execute(stmt)    
