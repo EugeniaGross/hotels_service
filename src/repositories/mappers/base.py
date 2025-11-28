@@ -10,13 +10,14 @@ SchemaType = TypeVar("SchemaType", bound=BaseModel)
 
 
 class DataMapper:
-    db_model = None
-    scheme = None
-    
+    db_model: Type[Base]
+    schema: Type[SchemaType]
+
     @classmethod
     def map_to_domain_entity(cls, data: Base | dict | Row | RowMapping) -> SchemaType:
-        return cls.scheme.model_validate(data, from_attributes=True)
+        return cls.schema.model_validate(data, from_attributes=True)
 
     @classmethod
     def map_to_persistence_entity(cls, data: BaseModel) -> Base:
         return cls.db_model(**data.model_dump())
+    

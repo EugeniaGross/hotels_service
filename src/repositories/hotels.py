@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Sequence
 
 from sqlalchemy import select, func
 
@@ -13,7 +14,7 @@ from src.repositories.mappers.mappers import HotelDataMapper
 class HotelRepository(BaseRepository):
     model = HotelsORM
     mapper = HotelDataMapper
-    
+
     async def get_filtered_by_time(
         self,
         date_from: date,
@@ -22,7 +23,7 @@ class HotelRepository(BaseRepository):
         title,
         limit,
         offset,
-    ) -> list[Hotel]:
+    ) -> Sequence[Hotel]:
         rooms_ids_to_get = rooms_ids_for_booking(date_from=date_from, date_to=date_to)
         hotels_ids_to_get = (
             select(RoomsORM.hotel_id)
@@ -32,10 +33,15 @@ class HotelRepository(BaseRepository):
 
         query = select(HotelsORM).filter(HotelsORM.id.in_(hotels_ids_to_get))
         if location:
-            query = query.filter(func.lower(HotelsORM.location).contains(location.strip().lower()))
+            query = query.filter(
+                func.lower(HotelsORM.location).contains(location.strip().lower())
+            )
         if title:
-            query = query.filter(func.lower(HotelsORM.title).contains(title.strip().lower()))
+            query = query.filter(
+                func.lower(HotelsORM.title).contains(title.strip().lower())
+            )
         query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
-        return [self.mapper.map_to_domain_entity(model) for model in result.scalars().all()]
-    
+        return [
+            self.mapper.map_to_domain_entity(model) for model in result.scalars().all()
+        ]

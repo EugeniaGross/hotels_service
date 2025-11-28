@@ -6,4 +6,3 @@ def test_create_access_token():
     token = AuthService().create_access_token(data)
     assert token
     assert isinstance(token, str)
-    

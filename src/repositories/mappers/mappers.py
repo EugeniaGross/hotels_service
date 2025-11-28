@@ -13,40 +13,39 @@ from src.schemas.users import User, UserWithHashedPassword
 
 class HotelDataMapper(DataMapper):
     db_model = HotelsORM
-    scheme = Hotel
+    schema = Hotel
 
 
 class RoomDataMapper(DataMapper):
     db_model = RoomsORM
-    scheme = Room
+    schema = Room
 
 
 class RoomDataWithRelsMapper(DataMapper):
     db_model = RoomsORM
-    scheme = RoomWithRels
+    schema = RoomWithRels
 
 
 class UserDataMapper(DataMapper):
     db_model = UsersORM
-    scheme = User
-    
-    
+    schema = User
+
+
 class UserWithHashedPasswordDataMapper(DataMapper):
     db_model = UsersORM
-    scheme = UserWithHashedPassword
+    schema = UserWithHashedPassword
 
 
 class BookingDataMapper(DataMapper):
     db_model = BookingsORM
-    scheme = Bookings
+    schema = Bookings
 
 
 class FacilityDataMapper(DataMapper):
     db_model = FacilitiesORM
-    scheme = Facility
+    schema = Facility
 
 
 class RoomFacilityDataMapper(DataMapper):
     db_model = RoomsFacilitiesORM
-    scheme = RoomFacility
-    
+    schema = RoomFacility

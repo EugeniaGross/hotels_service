@@ -21,9 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.execute(
-        "ALTER TABLE rooms ALTER COLUMN price TYPE INTEGER USING price::integer"
-    )
+    op.execute("ALTER TABLE rooms ALTER COLUMN price TYPE INTEGER USING price::integer")
 
 
 def downgrade() -> None:

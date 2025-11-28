@@ -17,10 +17,7 @@ async def get_facilities(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_facility(
-    db: DBDep,
-    data: FacilityAdd
-):
+async def create_facility(db: DBDep, data: FacilityAdd):
     facility = await db.facilities.add(data)
     await db.commit()
     return {"status": "ok", "data": facility}

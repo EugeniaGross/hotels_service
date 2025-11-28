@@ -21,5 +21,3 @@ async def test_add_booking(db):
     await db.commit()
     booking = await db.bookings.get_one_or_none(id=new_booking.id)
     assert booking is None
-    
-    

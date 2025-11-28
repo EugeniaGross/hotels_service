@@ -37,4 +37,3 @@ app.include_router(images_router)
 
 if __name__ == "__main__":
     uvicorn.run(app="main:app", reload=True, port=7000)
-    

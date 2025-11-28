@@ -12,12 +12,11 @@ class BookingsAddRequest(BaseModel):
 class BookingsAdd(BookingsAddRequest):
     user_id: int
     price: int
-    
-    
+
+
 class Bookings(BookingsAddRequest):
     id: int
     total_cost: int
     user_id: int
-    
+
     model_config = ConfigDict(from_attributes=True)
-    

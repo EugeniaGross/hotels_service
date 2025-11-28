@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from logging.config import fileConfig
 import sys
 import os
@@ -12,20 +13,13 @@ if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
 from src.database import Base
-from src.models.hotels import *
-from src.models.rooms import *
-from src.models.users import *
-from src.models.bookings import *
-from src.models.facilities import *
+from src.models import *  # noqa: F403
 from src.config import settings
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+
 config = context.config
 config.set_main_option("sqlalchemy.url", f"{settings.DB_URL}?async_fallback=True")
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
@@ -79,9 +73,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

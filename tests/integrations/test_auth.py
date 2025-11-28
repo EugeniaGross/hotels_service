@@ -10,4 +10,3 @@ def test_create_and_decode_access_token():
     assert decode_data
     assert decode_data.get("user_id") == data["user_id"]
     assert "exp" in decode_data
-    
