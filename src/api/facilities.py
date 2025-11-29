@@ -3,6 +3,7 @@ from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep
 from src.schemas.facilities import Facility, FacilityAdd
+from src.services.facilities import FacilityService
 
 router = APIRouter(prefix="/facilities", tags=["Удобства"])
 
@@ -12,12 +13,10 @@ router = APIRouter(prefix="/facilities", tags=["Удобства"])
 async def get_facilities(
     db: DBDep,
 ) -> list[Facility]:
-    facilities = await db.facilities.get_all()
-    return facilities
+    return await FacilityService(db).get_facilities()
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_facility(db: DBDep, data: FacilityAdd):
-    facility = await db.facilities.add(data)
-    await db.commit()
+    facility = await FacilityService(db).create_facility(data)
     return {"status": "ok", "data": facility}
