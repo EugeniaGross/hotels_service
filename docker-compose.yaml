@@ -1,0 +1,88 @@
+services:
+  booking_db:
+    image: postgres:17
+    container_name: 'booking_db'
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: 
+      - backend
+    restart: always
+  
+  booking_redis:
+    image: redis:6.0.1-alpine
+    container_name: 'redis_db'
+    env_file:
+      - .env
+    volumes:
+      - local_redis_data:/data
+    command: >
+      --maxclients 20000 --timeout 300 --appendonly yes --replica-read-only no
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: always
+    networks:
+      - backend
+  
+  booking_back_service:
+    container_name: 'booking_back'
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - backend
+    env_file:
+      - .env
+    depends_on:
+      booking_redis:
+        condition: service_healthy
+      booking_db:
+        condition: service_healthy
+
+  booking_celery_worker_service:
+    container_name: 'booking_celery_worker'
+    build:
+      context: .
+    networks:
+      - backend
+    env_file:
+      - .env
+    command: "celery --app=src.tasks.celery_app:celery_instance worker -l INFO"
+    depends_on:
+      booking_redis:
+        condition: service_healthy
+      booking_back_service:
+        condition: service_started
+      booking_db:
+        condition: service_healthy
+
+  booking_celery_beat_service:
+    container_name: 'booking_celery_beat'
+    build:
+      context: .
+    networks:
+      - backend
+    env_file:
+      - .env
+    command: "celery --app=src.tasks.celery_app:celery_instance beat -l INFO"
+    depends_on:
+      booking_redis:
+        condition: service_healthy
+      booking_back_service:
+        condition: service_started
+      booking_db:
+        condition: service_healthy
+
+networks:
+  myNetwork:
+    external: true

@@ -34,7 +34,8 @@ class RoomService(BaseService):
             RoomFacilityAdd(room_id=room.id, facility_id=facility_id)
             for facility_id in data.facilities_ids
         ]
-        await self.db.rooms_facilities.add_bulk(rooms_facilities)
+        if rooms_facilities:
+            await self.db.rooms_facilities.add_bulk(rooms_facilities)
         await self.db.commit()
         return room
     

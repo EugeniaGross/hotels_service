@@ -18,7 +18,7 @@ from src.api.facilities import router as router_facilities
 from src.api.images import router as images_router
 from src.setup import redis_manager
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
@@ -40,4 +40,5 @@ app.include_router(router_facilities)
 app.include_router(images_router)
 
 if __name__ == "__main__":
-    uvicorn.run(app="main:app", reload=True, port=7000)
+    # uvicorn.run(app="main:app", reload=True, port=7000)
+    uvicorn.run("main:app", host="0.0.0.0", reload=True)

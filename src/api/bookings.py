@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, Body, status, HTTPException
 
 from src.api.dependencies import DBDep, UserIDDep, PaginationDep, BookingFiltersDep
 from src.exceptions import AllRoomsAreBookedException, ObjectNotFoundException, RoomNotFoundHTTPException
@@ -10,7 +10,19 @@ router = APIRouter(prefix="/bookings", tags=["Бронирования"])
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_booking(db: DBDep, user_id: UserIDDep, data: BookingsAddRequest):
+async def create_booking(
+    db: DBDep, 
+    user_id: UserIDDep, 
+    data: BookingsAddRequest = Body(
+        openapi_examples={
+            "1": {
+                "summary": "Валидный запрос",
+                "value": {"date_from": "2025-12-04", "date_to": "2025-12-10", "room_id": 1},
+            }
+        }
+    ),
+):
+    """Создать бронирование"""
     try:
         booking = await BookingService(db).create_booking(user_id, data)
         return {"status": "ok", "data": booking}
@@ -26,6 +38,7 @@ async def create_booking(db: DBDep, user_id: UserIDDep, data: BookingsAddRequest
 async def get_bookings(
     pagination: PaginationDep, db: DBDep, filters: BookingFiltersDep
 ) -> list[Bookings]:
+    """Получить бронирования"""
     return await BookingService(db).get_bookings(
         filters,
         limit=pagination.per_page,
@@ -39,6 +52,7 @@ async def get_bookings_me(
     db: DBDep,
     user_id: UserIDDep,
 ) -> list[Bookings]:
+    """Получить бронирования текущего пользователя"""
     return await BookingService(db).get_bookings_current_user(
         user_id,
         limit=pagination.per_page,

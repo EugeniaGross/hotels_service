@@ -21,6 +21,7 @@ async def register_user(
         }
     ),
 ) -> dict:
+    """Регистрация пользователя"""
     hashed_password = AuthService().get_hash_password(data.password)
     data = UserAdd(email=data.email, hashed_password=hashed_password)
     try:
@@ -47,6 +48,7 @@ async def login_user(
         }
     ),
 ) -> dict:
+    """Авторизация пользователя"""
     user = await db.users.get_one_with_hashed_pass(email=data.email)
     if not user:
         raise HTTPException(
@@ -65,11 +67,13 @@ async def login_user(
 
 @router.get("/me")
 async def get_me(db: DBDep, user_id: UserIDDep) -> User | None:
+    """Получение данных пользователя"""
     user = await db.users.get_one_or_none(id=user_id)
     return user
 
 
 @router.post("/logout")
 async def logout(user_id: UserIDDep, response: Response) -> dict:
+    """Выход пользователя"""
     response.delete_cookie("access_token")
     return {"status": "ok"}
